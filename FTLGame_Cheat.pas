@@ -400,21 +400,24 @@ if data=0 then
           getaddr(baseaddr+baseoffset,[$18,$4*addri,$1A0],powermax);
           getaddr(baseaddr+baseoffset,[$18,$4*addri,$170],powerzelta);
           getaddr(baseaddr+baseoffset,[$18,$4*addri,$100],powerstat);
-          if (sys=$70616577) then power:=max(8,wponmax)	//weapon
-          else if (sys=$6E6F7264) then power:=max(8,dronmax)	//drone
+          if (sys=$70616577) then power:=max(16,wponmax)	//weapon
+          else if (sys=$6E6F7264) then power:=max(16,dronmax)	//drone
           else
             begin
-              if (sys=$65696873) then power:=16	//shield
+              if (sys=$65696873) then power:=16		//shield
               else if (sys=$69676E65) then power:=8	//engine
-              else if (sys=$6E6F6C63) then power:=3	//clone
-              else if (sys=$6264656D) then power:=3	//medbay
-              else if (sys=$6779786F) then power:=6	//oxygen
+              else if (sys=$6E6F6C63) then power:=4	//clone
+              else if (sys=$6264656D) then power:=4	//medbay
+              else if (sys=$6779786F) then power:=16	//oxygen
               else if (sys=$656C6574) then power:=4	//teleport
-              else if (sys=$616F6C63) then power:=6	//hide
+              else if (sys=$616F6C63) then power:=16	//hide
               else if (sys=$646E696D) then power:=3	//mind
               else if (sys=$6B636168) then power:=3	//hack
-              else if (sys=$6F6C6970) then power:=3	//stear
-              else if (sys=$74746162) then power:=12	//battery
+              else if (sys=$00000011) then power:=4	//temporal
+              else if (sys=$6F6C6970) then power:=4	//pilot
+              else if (sys=$736E6573) then power:=4	//sensor
+              else if (sys=$726F6F64) then power:=4	//door
+              else if (sys=$74746162) then power:=16	//battery
               else power:=powermax;
             setaddr(baseaddr+baseoffset,[$18,$4*addri,$50],max(power-powerzelta,0));
             setaddr(baseaddr+baseoffset,[$18,$4*addri,$16C],max(power-powerzelta,0));
