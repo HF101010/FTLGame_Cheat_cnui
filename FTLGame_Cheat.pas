@@ -2,7 +2,7 @@
 {$R FTLGame_Cheat.res}
 program FTLGame_Cheat;
 
-uses JwaPsApi,windows,display;
+uses JwaPsApi,windows,display,SysUtils;
 
 var multb:boolean=false;
 var phnd:HANDLE;
@@ -151,38 +151,44 @@ const
       iskil=23;
 const maxitem=23;
 const itemc:array[0..maxitem]of ansistring=(
-'ALL',
-'REBEL',
-'JUMP',
-'REACTOR',
-'HULL',
-'SHIELD',
-'SCRAP',
-'FUEL',
-'MISSILE',
-'DRONE',
-'POWER',
-'STATUS',
-'COOLDOWN',
-'WEAPON',
-'CLONE',
-'HACKING',
-'INVISIBLE',
-'MIND',
-'BATTERY',
-'TITAN',
-'OXYGEN',
-'HUMAN',
-'MOVE',
-'SKILL');
+'全部功能',
+'敌舰无法跃迁',
+'立即跃迁',
+'无限反应堆',
+'舰体最大',
+'护盾恢复',
+'无限废料',
+'无限燃料',
+'无限导弹',
+'无限无人机',
+'系统功率最大',
+'系统状态最大',
+'系统无冷却',
+'武器立即充能',
+'克隆舱维持',
+'黑客维持',
+'隐身维持',
+'心灵控制维持',
+'备用电池维持',
+'泰坦武器',
+'氧气最大',
+'船员满血',
+'船员瞬移',
+'船员技能最大');
 var itemb:array[0..maxitem]of shortint;
 var itemi:longword;
-const szw=160;szh=32;
+const panelw=360;titleh=60;rowh=27;togglew=44;leftpad=16;
+const panelh=titleh+rowh*(maxitem+1);
+const colBg=$0018130F;colPanel=$0028211C;colHeader=$00201915;
+const colLine=$004A3F35;colText=$00F5F1EC;colMuted=$00ADA093;
+const colOff=$005F544A;colOn=$0090C94D;colOnce=$00FFA64C;
+const colHover=$008E7C6A;colAccent=$00D6A24A;
 var mousedown:boolean;
 var mousex,mousey:longint;
 
 procedure getact();
 var imouse:longword;
+    row:longint;
 begin
 mousex:=GetMousePosX();
 mousey:=GetMousePosY();
@@ -192,33 +198,61 @@ while IsNextMsg() do
   If IsMsg(WM_LBUTTONUP) then mousedown:=false;
   If IsMsg(WM_LBUTTONUP) then
     begin
-    if (mousex>szh) and (mousey div szh>=0) and (mousey div szh<=maxitem) then
-      if itemb[mousey div szh]=0 then itemb[mousey div szh]:=1;
-    if (mousex<=szh) and (mousey div szh>=0) and (mousey div szh<=maxitem) then
-      if itemb[mousey div szh]=2 then itemb[mousey div szh]:=0
-      else if itemb[mousey div szh]>=0 then itemb[mousey div szh]:=2;
-    if mousey div szh=0 then for imouse:=1 to maxitem do itemb[imouse]:=itemb[0];
+    row:=(mousey-titleh) div rowh;
+    if (mousey>=titleh) and (row>=0) and (row<=maxitem) then
+      begin
+      if mousex>togglew+leftpad then
+        if itemb[row]=0 then itemb[row]:=1;
+      if mousex<=togglew+leftpad then
+        if itemb[row]=2 then itemb[row]:=0
+        else if itemb[row]>=0 then itemb[row]:=2;
+      if row=0 then for imouse:=1 to maxitem do itemb[imouse]:=itemb[0];
+      end;
     end;
   end;
 end;
 
 procedure drawall();
 var idraw:longword;
-var tcolor:longword;
+    y:longint;
+    knobx:longint;
+    tcolor:longword;
+    labelcolor:longword;
 begin
 Clear();
+Bar(0,0,panelw,panelh,transparent,colPanel);
+Bar(0,0,panelw,titleh,transparent,colHeader);
+Bar(0,0,4,panelh,transparent,colAccent);
+Bar(0,titleh-1,panelw,1,transparent,colLine);
+DrawtextXY(UTF8ToAnsi('FTL 游戏修改器'),leftpad,9,colText);
+DrawtextXY(UTF8ToAnsi('功能列表 · 状态控制'),leftpad,34,colMuted);
+if itemb[0]=-1 then
+  begin
+  Circle(panelw-82,22,5,colOnce);
+  DrawtextXY(UTF8ToAnsi('等待游戏'),panelw-70,14,colMuted);
+  end
+else
+  begin
+  Circle(panelw-82,22,5,colOn);
+  DrawtextXY(UTF8ToAnsi('已连接'),panelw-70,14,colMuted);
+  end;
 for idraw:=0 to maxitem do
   begin
-  if itemb[idraw]=-1 then tcolor:=$3F3F3F;
-  if itemb[idraw]=0 then tcolor:=$7F7F7F;
-  if itemb[idraw]=1 then tcolor:=$0000FF;
-  if itemb[idraw]=2 then tcolor:=$FFFFFF;
-  Bar(0+1,szh*idraw+1,szh-2,szh-2,tcolor,transparent);
-  if itemb[idraw]=2 then Circle(szh div 2,szh*idraw+1+szh div 2,szh div 6,tcolor);
-  if itemb[idraw]=0 then
-    if (mousex>szh) and ((mousey div szh=idraw) or (mousey div szh=0)) then
-      begin if mousedown then tcolor:=$7FFF7F else tcolor:=$7F7FFF end;
-  DrawtextXY(itemc[idraw],szh,szh*idraw,tcolor);
+  y:=titleh+rowh*idraw;
+  if itemb[idraw]=-1 then begin tcolor:=colOff; labelcolor:=colMuted end
+  else if itemb[idraw]=2 then begin tcolor:=colOn; labelcolor:=colText end
+  else if itemb[idraw]=1 then begin tcolor:=colOnce; labelcolor:=colText end
+  else begin tcolor:=colOff; labelcolor:=colText end;
+  knobx:=leftpad+9;
+  if itemb[idraw]=2 then knobx:=leftpad+togglew-9;
+  if (mousey>=y) and (mousey<y+rowh) and (mousex>togglew+leftpad) and (itemb[idraw]=0) then
+    tcolor:=colHover;
+  Bar(leftpad+8,y+5,togglew-16,17,transparent,colBg);
+  Circle(leftpad+8,y+14,8,colBg);
+  Circle(leftpad+togglew-8,y+14,8,colBg);
+  Circle(knobx,y+14,8,tcolor);
+  DrawtextXY(UTF8ToAnsi(itemc[idraw]),leftpad+togglew+12,y+3,labelcolor);
+  Bar(leftpad,y+rowh-1,panelw-leftpad*2,1,transparent,colLine);
   end;
 FreshWin();
 end;
@@ -228,11 +262,11 @@ var timeold:longword;
 var frame:longword=0;
 var frametime:longword=30;
 begin
-CreateWin(szh+szw,(maxitem+1)*szh,blue);
-SetTitle('FTL Cheater by ax_pokl');
-SetWindowPos(_hw,HWND_TOPMOST,getscrwidth()-szh-szw,0,0,0,SWP_NOSIZE);
-SetFontName('Consolas');
-SetFontHeight(szh);
+CreateWin(panelw,panelh,colPanel);
+SetTitleW(UTF8Decode('FTL 游戏修改器'));
+SetWindowPos(_hw,HWND_TOPMOST,getscrwidth()-panelw-18,18,0,0,SWP_NOSIZE);
+SetFontName('Microsoft YaHei UI');
+SetFontHeight(17);
 timeold:=gettime();
 repeat
 getact();
